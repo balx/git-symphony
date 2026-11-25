@@ -1,0 +1,16 @@
+{
+  "name": "git-symphony",
+  "version": "0.1.0",
+  "description": "Turn any git repository's history into a piece of music (and a video).",
+  "type": "module",
+  "bin": { "git-symphony": "src/cli.js" },
+  "files": ["src"],
+  "scripts": { "test": "node --test" },
+  "engines": { "node": ">=20" },
+  "keywords": ["git", "music", "midi", "sonification", "visualization", "soundfont"],
+  "license": "MIT",
+  "dependencies": {
+    "@napi-rs/canvas": "^1.2.1",
+    "spessasynth_core": "^4.4.12"
+  }
+}

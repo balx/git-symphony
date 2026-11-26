@@ -2,7 +2,7 @@
 
 **Turn any git repository's history into a minute of music.** Every commit is a note, every top contributor is an instrument, every release is a cymbal swell.
 
-[![git/git as music: 20 years and 61,592 commits in 60 seconds. Click for the video with sound.](docs/demo.gif)](docs/demo.mp4)
+https://github.com/user-attachments/assets/656da8fc-7211-4da2-a0c0-4612f33949d1
 
 *Above: [git/git](https://github.com/git/git), 2005 to today, in 60 seconds. Junio C Hamano is the piano, Jeff King the celesta, 2,403 other contributors share a nylon guitar. **[Watch with sound (mp4)](docs/demo.mp4)**.*
 

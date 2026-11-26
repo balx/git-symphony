@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { compose, tagWeight } from '../src/compose.js';
+import { createHash } from 'node:crypto';
+import { compose, tagWeight, sha1u32 } from '../src/compose.js';
 import { parseLog, nameFromUrl } from '../src/git.js';
 
 const fake = (n, authors = ['ada', 'bob', 'cy', 'dee', 'eve', 'fay', 'gus', 'hal'], dirs = ['src', 'test', 'docs', '.md']) =>
@@ -90,4 +91,9 @@ test('repo name comes from the origin URL in any form', () => {
   for (const u of ['https://github.com/kubernetes/kubernetes.git', 'git@github.com:kubernetes/kubernetes.git', 'https://github.com/kubernetes/kubernetes/', 'ssh://git@host/x/kubernetes\n']) {
     assert.equal(nameFromUrl(u), 'kubernetes');
   }
+});
+
+test('pure SHA-1 matches node:crypto', () => {
+  const cases = ['', 'a', 'src', 'héllo ✓ 漢字', 'x'.repeat(55), 'x'.repeat(56), 'x'.repeat(64), 'y'.repeat(1000), 0.123456789, 'e83c5163316f89bfbde7d9ab23ca2e25604af290'];
+  for (const s of cases) assert.equal(sha1u32(s), createHash('sha1').update(String(s)).digest().readUInt32BE(0), String(s));
 });

@@ -1,30 +1,11 @@
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-import { createHash } from 'node:crypto';
+// Pure synthesis and mastering: runs in Node and in browsers (no Node imports).
 import { MIDIBuilder, BasicMIDI, SpessaSynthProcessor, SpessaSynthSequencer, SoundBankLoader, audioToWav } from 'spessasynth_core';
 import { INSTRUMENTS, BACKING } from './compose.js';
 
 // GeneralUser GS v2.0.3 by S. Christian Collins, pinned by commit and checksum.
-const SOUNDFONT_URL = 'https://raw.githubusercontent.com/mrbumpy409/GeneralUser-GS/97049183643d5fc5a9322a69c5b09efb667c6c3a/GeneralUser-GS.sf2';
-const SOUNDFONT_SHA256 = '9575028c7a1f589f5770fccc8cff2734566af40cd26ed836944e9a5152688cfe';
+export const SOUNDFONT_URL = 'https://raw.githubusercontent.com/mrbumpy409/GeneralUser-GS/97049183643d5fc5a9322a69c5b09efb667c6c3a/GeneralUser-GS.sf2';
+export const SOUNDFONT_SHA256 = '9575028c7a1f589f5770fccc8cff2734566af40cd26ed836944e9a5152688cfe';
 export const SAMPLE_RATE = 48000;
-
-export async function soundfont(log) {
-  const dir = path.join(process.env.XDG_CACHE_HOME || path.join(os.homedir(), '.cache'), 'git-symphony');
-  const file = path.join(dir, 'GeneralUser-GS.sf2');
-  if (fs.existsSync(file)) return fs.readFileSync(file);
-  log('Downloading the GeneralUser GS soundfont (31 MB, first run only)...');
-  const res = await fetch(SOUNDFONT_URL);
-  if (!res.ok) throw new Error(`soundfont download failed: HTTP ${res.status}`);
-  const buf = Buffer.from(await res.arrayBuffer());
-  const sha = createHash('sha256').update(buf).digest('hex');
-  if (sha !== SOUNDFONT_SHA256) throw new Error(`soundfont checksum mismatch (${sha})`);
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(file + '.tmp', buf);
-  fs.renameSync(file + '.tmp', file);
-  return buf;
-}
 
 // [volume, pan, reverb] per channel; melodic volumes are calibrated to equal loudness
 const MIX = [[100, 64, 60], [106, 88, 70], [117, 40, 50], [88, 82, 60], [103, 52, 50], [82, 76, 70], [89, 58, 55], [72, 64, 90], [76, 64, 20], [86, 64, 40], [70, 70, 90]];
@@ -133,4 +114,4 @@ export function master([L, R], target = -14) {
   return [L.subarray(0, end), R.subarray(0, end)];
 }
 
-export const toWav = (channels) => Buffer.from(audioToWav(channels, SAMPLE_RATE, { normalizeAudio: false }));
+export const toWav = (channels) => new Uint8Array(audioToWav(channels, SAMPLE_RATE, { normalizeAudio: false }));

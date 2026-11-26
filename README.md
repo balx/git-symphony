@@ -8,6 +8,10 @@
 
 ## Quickstart
 
+**In the browser:** [balx.github.io/git-symphony](https://balx.github.io/git-symphony/?repo=git/git) plays any public GitHub repository, no install. It needs a GitHub token (GitHub's API does not serve commit history anonymously) and picks notes from commit subjects instead of changed files, so it can sound slightly different from the command line.
+
+**On the command line:**
+
 ```sh
 npx git-symphony path/to/repo            # -> repo-symphony.mid + repo-symphony.wav
 npx git-symphony path/to/repo --video    # also repo-symphony.mp4 (needs ffmpeg)
@@ -42,6 +46,10 @@ Options:
 - `.mid`: one track per instrument, named after its contributor. Open it in GarageBand, Logic, Ableton or MuseScore and remix it.
 - `.wav`: 48 kHz stereo, rendered with sampled instruments, mastered to -14 LUFS (streaming loudness) with a -1.5 dBFS peak limiter.
 - `.mp4`: 1280x720 piano roll, notes colored per contributor, the date and commit messages synced to the music.
+
+## Web player
+
+`web/` is a static page: it reads history from the GitHub GraphQL API, renders audio with the same code in a Web Worker, and draws the same frames on a canvas as the CLI video. Run it locally with `npm run web` (http://localhost:8080); `npm run build:web` writes the deployable site to `site/`, which the `Web player` workflow publishes to GitHub Pages on every push to `main`.
 
 ## Credits
 

@@ -5,12 +5,19 @@
   "type": "module",
   "bin": { "git-symphony": "src/cli.js" },
   "files": ["src"],
-  "scripts": { "test": "node --test" },
+  "scripts": {
+    "test": "node --test",
+    "web": "esbuild web/main.js web/worker.js --bundle --format=esm --sourcemap --outdir=web/build --servedir=web --serve=8080",
+    "build:web": "rm -rf site && mkdir -p site && cp web/index.html site/ && esbuild web/main.js web/worker.js --bundle --format=esm --minify --outdir=site/build"
+  },
   "engines": { "node": ">=20" },
   "keywords": ["git", "music", "midi", "sonification", "visualization", "soundfont"],
   "license": "MIT",
   "dependencies": {
     "@napi-rs/canvas": "^1.2.1",
     "spessasynth_core": "^4.4.12"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.12"
   }
 }

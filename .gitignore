@@ -3,3 +3,5 @@ node_modules/
 *.wav
 *.mp4
 !docs/*.mp4
+web/build/
+site/

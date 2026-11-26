@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>git-symphony</title>
+<meta name="description" content="Turn a GitHub repository's history into a minute of music, with a piano-roll video.">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f1522'/%3E%3Crect x='6' y='9' width='9' height='4' rx='2' fill='%23ff6b6b'/%3E%3Crect x='12' y='15' width='13' height='4' rx='2' fill='%234cc9f0'/%3E%3Crect x='9' y='21' width='7' height='4' rx='2' fill='%23ffd166'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --stage: #0f1522;
+    --stage-deep: #07090f;
+    --ink: #e8edf5;
+    --muted: #8892a4;
+    --faint: #5d6678;
+    --line: rgba(255, 255, 255, 0.09);
+    --field: rgba(255, 255, 255, 0.04);
+    --error: #ff8a8a;
+    --glow-a: #4cc9f0;
+    --glow-b: #c77dff;
+    --radius: 10px;
+    font-family: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+    font-optical-sizing: auto;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--stage-deep); }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--ink);
+    background: linear-gradient(var(--stage), var(--stage-deep) 70vh) no-repeat, var(--stage-deep);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  main { max-width: 1100px; margin: 0 auto; padding: 56px 16px 40px; }
+  @media (min-width: 720px) { main { padding: 72px 32px 48px; } }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(44px, 8vw, 84px);
+    line-height: 0.95;
+    font-weight: 700;
+    letter-spacing: -0.035em;
+  }
+  .lede { margin: 16px 0 36px; max-width: 34em; color: var(--muted); font-size: 18px; }
+
+  form { display: grid; gap: 12px; grid-template-columns: 1fr; }
+  @media (min-width: 640px) { form { grid-template-columns: 1fr auto auto; align-items: end; } }
+  label { display: grid; gap: 6px; font-size: 14px; color: var(--muted); }
+  input, select, button { font: inherit; color: inherit; }
+  input, select {
+    height: 48px;
+    padding: 0 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--field);
+    min-width: 0;
+  }
+  input::placeholder { color: var(--faint); }
+  select { padding-right: 36px; appearance: none; cursor: pointer;
+    background: var(--field) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%238892a4' stroke-width='1.6'/%3E%3C/svg%3E") no-repeat right 14px center; }
+  select option { background: var(--stage); }
+  :is(input, select, button, summary, a):focus-visible { outline: 2px solid var(--glow-a); outline-offset: 2px; }
+
+  button {
+    height: 48px;
+    padding: 0 22px;
+    border: 0;
+    border-radius: var(--radius);
+    background: var(--ink);
+    color: var(--stage-deep);
+    font-weight: 650;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.45; cursor: default; }
+  button.quiet { height: 40px; padding: 0 16px; background: var(--field); color: var(--ink); border: 1px solid var(--line); font-weight: 500; }
+  button.quiet:not(:disabled):hover { background: rgba(255, 255, 255, 0.08); }
+
+  details { grid-column: 1 / -1; color: var(--muted); font-size: 15px; }
+  summary { cursor: pointer; width: max-content; color: var(--ink); }
+  summary::marker { color: var(--faint); }
+  .token { display: grid; gap: 10px; margin-top: 12px; max-width: 44em; }
+  .token p { margin: 0; }
+  .token-row { display: flex; gap: 8px; }
+  .token-row input { flex: 1; }
+  a { color: var(--ink); text-underline-offset: 3px; text-decoration-color: var(--faint); }
+  a:hover { text-decoration-color: var(--ink); }
+
+  .stage { position: relative; margin-top: 28px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line);
+    background: linear-gradient(#0f1522, #07090f); aspect-ratio: 16 / 9; }
+  canvas { display: block; width: 100%; height: 100%; }
+  .hint { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; padding: 16px; color: var(--faint); }
+  .hint strong { display: block; color: var(--muted); font-weight: 500; font-size: clamp(17px, 2.4vw, 22px); }
+
+  .status-row { min-height: 52px; padding-top: 14px; }
+  #status { margin: 0; color: var(--muted); }
+  #status.error { color: var(--error); }
+  #bar { height: 3px; margin-top: 10px; border-radius: 2px; background: var(--line); overflow: hidden; }
+  #bar > div { height: 100%; background: linear-gradient(90deg, var(--glow-a), var(--glow-b)); transform-origin: left; transform: scaleX(0); transition: transform 0.2s linear; }
+
+  #actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+  #actions .spacer { flex: 1; }
+
+  footer { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--faint); font-size: 14px; display: grid; gap: 8px; max-width: 60em; }
+  footer p { margin: 0; }
+  code { font-size: 0.92em; color: var(--muted); }
+  [hidden] { display: none !important; }
+  @media (prefers-reduced-motion: reduce) { #bar > div { transition: none; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>git-symphony</h1>
+  <p class="lede">Turn a GitHub repository's history into a minute of music. Every commit is a note, every top contributor an instrument, every release a cymbal swell.</p>
+
+  <form id="form" novalidate>
+    <label>Repository
+      <input id="repo" name="repo" placeholder="owner/name or GitHub URL" autocomplete="off" autocapitalize="off" spellcheck="false" required>
+    </label>
+    <label>Length
+      <select id="length">
+        <option value="30">30 seconds</option>
+        <option value="60" selected>1 minute</option>
+        <option value="90">90 seconds</option>
+        <option value="120">2 minutes</option>
+      </select>
+    </label>
+    <button id="play" type="submit">Play</button>
+    <details id="token-box">
+      <summary>GitHub token</summary>
+      <div class="token">
+        <p>GitHub only shares commit history with signed-in requests, so this page needs a token.
+          <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Create a fine-grained token</a>
+          and keep the default public, read-only access. It stays in this browser and is only sent to api.github.com.</p>
+        <div class="token-row">
+          <input id="token" type="password" placeholder="github_pat_..." autocomplete="off" spellcheck="false" aria-label="GitHub token">
+          <button id="forget" class="quiet" type="button">Forget</button>
+        </div>
+      </div>
+    </details>
+  </form>
+
+  <div class="stage">
+    <canvas id="stage" aria-label="Piano roll of the repository's history"></canvas>
+    <div class="hint" id="hint"><strong>Enter a repository to hear its history.</strong>Try expressjs/express or your own project.</div>
+  </div>
+
+  <div class="status-row" aria-live="polite">
+    <p id="status"></p>
+    <div id="bar" hidden><div></div></div>
+  </div>
+  <div id="actions" hidden>
+    <button id="pause" class="quiet" type="button">Pause</button>
+    <button id="replay" class="quiet" type="button">Play from start</button>
+    <span class="spacer"></span>
+    <button id="save-video" class="quiet" type="button">Save video</button>
+    <button id="save-wav" class="quiet" type="button">Save audio</button>
+    <button id="save-mid" class="quiet" type="button">Save MIDI</button>
+  </div>
+
+  <footer>
+    <p>The page picks each note's starting pitch from the commit subject, since GitHub's API does not list changed files. For the version that reads changed files from a local clone, run <code>npx git-symphony path/to/repo --video</code>.</p>
+    <p>Instruments: <a href="https://github.com/mrbumpy409/GeneralUser-GS">GeneralUser GS</a> by S. Christian Collins. <a href="https://github.com/balx/git-symphony">Source on GitHub</a>.</p>
+  </footer>
+</main>
+<script type="module" src="build/main.js"></script>
+</body>
+</html>

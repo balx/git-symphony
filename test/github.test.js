@@ -63,6 +63,11 @@ test('fetchRepo pages history in parallel by offset and follows tag pages', asyn
   assert.deepEqual(repo.tags.map((t) => t.name), ['v1.0.0', 'v2.0.0']);
   assert.equal(progress.at(-1), total);
   assert.equal(repo.head, 'HEAD');
+
+  seen.length = 0;
+  const again = await fetchRepo('o/r', 'tok', { fetch: fake, cached: repo });
+  assert.equal(again, repo); // branch has not moved: no history pages fetched
+  assert.equal(seen.length, 0);
 });
 
 test('fetchRepo needs a token', async () => {

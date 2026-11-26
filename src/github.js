@@ -90,9 +90,10 @@ function client(token, fetchImpl = globalThis.fetch) {
 /**
  * Fetches the default branch's history and tags.
  * onProgress({ done, total }) reports commits fetched so far.
+ * cached: an earlier result; returned as-is when the branch has not moved since.
  * Returns { name, head, commits, tags } (head = the commit the history was read at).
  */
-export async function fetchRepo(input, token, { onProgress = () => {}, fetch: fetchImpl } = {}) {
+export async function fetchRepo(input, token, { onProgress = () => {}, cached, fetch: fetchImpl } = {}) {
   if (!token) throw new Error('a GitHub token is needed (the GraphQL API does not allow anonymous requests)');
   const { owner, repo } = parseRepo(input);
   const gql = client(token, fetchImpl);
@@ -106,6 +107,7 @@ export async function fetchRepo(input, token, { onProgress = () => {}, fetch: fe
   const r = first.repository;
   if (!r.defaultBranchRef) throw new Error('repository has no commits');
   const head = r.defaultBranchRef.target.oid, total = r.defaultBranchRef.target.history.totalCount;
+  if (cached?.head === head) return cached;
   const pages = [r.defaultBranchRef.target.history.nodes];
   let done = pages[0].length;
   onProgress({ done, total });

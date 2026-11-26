@@ -1,4 +1,28 @@
-import { createHash } from 'node:crypto';
+/** First 32 bits of SHA-1(utf8(s)). Pure JS so composing runs synchronously in browsers too. */
+export function sha1u32(s) {
+  const bytes = new TextEncoder().encode(String(s));
+  const len = ((bytes.length + 9 + 63) >> 6) << 6;
+  const m = new Uint8Array(len);
+  m.set(bytes);
+  m[bytes.length] = 0x80;
+  const dv = new DataView(m.buffer);
+  dv.setUint32(len - 4, bytes.length * 8); // messages here are far below 512 MB
+  let [a0, b0, c0, d0, e0] = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476, 0xc3d2e1f0];
+  const w = new Uint32Array(80);
+  const rotl = (x, n) => (x << n) | (x >>> (32 - n));
+  for (let off = 0; off < len; off += 64) {
+    for (let i = 0; i < 16; i++) w[i] = dv.getUint32(off + 4 * i);
+    for (let i = 16; i < 80; i++) w[i] = rotl(w[i - 3] ^ w[i - 8] ^ w[i - 14] ^ w[i - 16], 1);
+    let a = a0, b = b0, c = c0, d = d0, e = e0;
+    for (let i = 0; i < 80; i++) {
+      const f = i < 20 ? ((b & c) | (~b & d)) + 0x5a827999 : i < 40 ? (b ^ c ^ d) + 0x6ed9eba1 : i < 60 ? ((b & c) | (b & d) | (c & d)) + 0x8f1bbcdc : (b ^ c ^ d) + 0xca62c1d6;
+      const t = (rotl(a, 5) + f + e + w[i]) | 0;
+      e = d; d = c; c = rotl(b, 30); b = a; a = t;
+    }
+    a0 = (a0 + a) | 0; b0 = (b0 + b) | 0; c0 = (c0 + c) | 0; d0 = (d0 + d) | 0; e0 = (e0 + e) | 0;
+  }
+  return a0 >>> 0;
+}
 
 export const BPM = 90;
 export const PPQ = 480;
@@ -43,7 +67,7 @@ const BASS_PATTERNS = [ // [slot, semitones above root, length in slots] per den
 const PHRASE = [0, 2, 4, 3, 5, 4, 2, 1]; // melodic contour over one bar, in scale steps
 const KICK = 36, STICK = 37, SNARE = 38, HAT = 42, OPEN_HAT = 46, CRASH = 49, CRASH2 = 57;
 
-const hash01 = (s) => createHash('sha1').update(String(s)).digest().readUInt32BE(0) / 2 ** 32;
+const hash01 = (s) => sha1u32(s) / 2 ** 32;
 const nearest = (target, lo, hi, pcs) => {
   let best = null;
   for (let p = lo; p <= hi; p++)

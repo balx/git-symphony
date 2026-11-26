@@ -4,7 +4,8 @@ import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { readRepo } from './git.js';
 import { compose } from './compose.js';
-import { soundfont, toMidi, render, master, toWav, SAMPLE_RATE } from './audio.js';
+import { toMidi, render, master, toWav, SAMPLE_RATE } from './audio.js';
+import { soundfont } from './soundfont.js';
 
 const HELP = `Usage: git-symphony <repo> [options]
 
